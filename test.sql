@@ -95,8 +95,30 @@ BEGIN
 DECLARE reservation_number INT(11);
 UPDATE seats_free SET freeseat = freeseat - 1 where (train_id = trip_train_id and seat_free_date = trip_date and freeseat > 0 and segment_id between seg0 and seg1);
 INSERT INTO reservations (reservation_date, paying_passenger_id, card_number, billing_address) VALUES(NOW(), passenger_id, card_number, billing_address);
-SET reservation_number = (SELECT COUNT(*) FROM reservations);
+SET reservation_number = (select reservation_id from reservations order by reservation_id DESC limit 1);
 SELECT reservation_number;
 END$$
 DELIMITER ;*/
-CALL make_reservation('2017-12-22', 1, 1, 1, 1, 123123123123, 'kalsdjflkajsdofihansdknfalkTEST', @'output');
+
+DELIMITER $$
+CREATE PROCEDURE make_trains_late()
+BEGIN
+DECLARE rand_train_id INT(11); 
+DECLARE rand_station_id INT(11); 
+DECLARE ptime_in TIME;
+DECLARE ptime_out TIME;
+DECLARE ptime_diff TIME;
+DECLARE prand_interval TIME;
+DECLARE base_time TIME;
+SET rand_train_id = FLOOR(RAND()*28);
+SET rand_station_id = FLOOR(RAND()*25);
+SET base_time = (SELECT DATE_ADD(DATE_ADD(timeout, INTERVAL 15*RAND() MINUTE), INTERVAL 90*RAND() SECOND) FROM stops_at where train_id = rand_train_id and station_id = rand_station_id);
+SET prand_interval = (SELECT TIME_DIFF(prand_interval, time_out) FROM stops_at where train_id = rand_train_id and station_id = rand_station_id);
+label1: WHILE rand_station_id <= 24 DO
+SELECT time_out INTO ptime_out from stops_at where train_id = rand_train_id and station_id = rand_station_id;
+SELECT time_in  INTO ptime_in from stops_at where train_id = rand_train_id and station_id = rand_station_id+1;
+SET ptime_diff = TIMEDIFF(ptime_out, ptime_in);
+SET  rand_station_id = rand_station_id + 1;
+END WHILE label1;
+END$$
+DELIMITER ;

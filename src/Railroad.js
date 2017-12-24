@@ -16,6 +16,8 @@ import {Grid,
 import CloseIcon from 'material-ui-icons/Close';
 import NewPassenger from './NewPassenger.js';
 import NewReservation from './NewReservation.js';
+import CheckReservation from './CheckReservation.js';
+import CheckStatus from './CheckStatus.js';
 
 class Railroad extends Component {
     constructor (props) {
@@ -88,7 +90,7 @@ class Railroad extends Component {
                         <CardHeader title="Check Reservation" />
                         <CardContent>
                             <Typography type="body1">
-                                Lost your ticket? Check your reservation.
+                                Lost your ticket? Need to cancel?
                             </Typography>
                         </CardContent>
                         <CardActions>
@@ -140,6 +142,10 @@ class Railroad extends Component {
                         <NewPassenger notify={this.notify} back={()=>{this.closeChoice()}} />:
                         this.state.toShow === 'newR' ?
                         <NewReservation notify={this.notify} back={()=>{this.closeChoice()}} />:
+                        this.state.toShow === 'checkR' ?
+                        <CheckReservation notify={this.notify} back={()=>{this.closeChoice()}}/>:
+                        this.state.toShow === 'checkS' ?
+                        <CheckStatus notify={this.notify} back={()=>{this.closeChoice()}}/>:
                         null
                     }
                 </Drawer>

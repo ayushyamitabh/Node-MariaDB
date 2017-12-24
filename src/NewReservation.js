@@ -56,6 +56,9 @@ class NewReservation extends Component{
             console.log(err);
         })
         this.socket.on('available_trains', (data)=>{
+            if (data.length === 0){
+                this.props.notify('There are no available trains for that time.');
+            }
             this.setState({
                 trains: data,
                 fallback: data,
@@ -70,7 +73,7 @@ class NewReservation extends Component{
         })
         this.socket.on('reservation_err', (err)=>{
             console.log(err);
-            this.props.notify('Something went wrong :/ Please check your Passenger ID.')
+            this.props.notify('Something went wrong :/ This may be due to an invalid Passenger ID.')
         })
         this.socket.on('confirm_reserve', (rows)=>{
             console.log(rows);
@@ -91,9 +94,15 @@ class NewReservation extends Component{
         else if (this.state.fromStation === '') this.props.notify('Please specify where you are travelling from.');
         else if (this.state.toStation === '') this.props.notify('Please specify where you want to travel to.');
         else {
+            var tod = 'NIGHT';
+            console.log('Get', this.state.time.getHours());
+            if (this.state.time.getHours()>=6 && this.state.time.getHours()<12) tod = 'MOR';
+            else if (this.state.time.getHours()>=12 && this.state.time.getHours()<18) tod = 'AFT';
+            else if (this.state.time.getHours()>=18) tod = 'EVE';
+            console.log('TOD',tod);
             this.socket.emit('get_avail_trains', {
                 date: this.formattedDate(),
-                time: this.formattedTime(),
+                time: tod,
                 from: this.state.fromStation,
                 to: this.state.toStation
             })
@@ -157,7 +166,7 @@ class NewReservation extends Component{
                         autoOk={true}
                         value={this.state.time}
                         returnMoment={true}
-                        onChange={(time)=>{this.setState({time:time.toDate()});}}
+                        onChange={(time)=>{this.setState({time:time.toDate()});console.log(time.toDate().getHours());}}
                     />
                 </div>
                 { this.state.stationList?
@@ -218,7 +227,7 @@ class NewReservation extends Component{
                     className="see-train-btn" 
                     raised 
                     color="primary"
-                    disabled={!this.state.stationList || this.state.searching ? true: false}
+                    disabled={this.state.selectedTrain !== '' || !this.state.stationList || this.state.searching ? true: false}
                     onClick={()=>{this.getTrains()}}
                 >
                     find trains

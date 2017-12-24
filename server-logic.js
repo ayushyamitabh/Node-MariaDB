@@ -67,6 +67,7 @@ io.on('connection', function(socket){
             }
         }
     )
+    c.end();
   })
   socket.on('get_station',function(d){
         var c = new Client({
@@ -80,6 +81,7 @@ io.on('connection', function(socket){
             if (err) io.sockets.to(socket.id).emit('fetch_station_err', err);
             else io.sockets.to(socket.id).emit('station_list',rows);
         })
+        c.end();
   })
   socket.on('get_avail_trains',function(data){
         var c = new Client({
@@ -89,11 +91,12 @@ io.on('connection', function(socket){
             multiStatements: true,
             db: 'railroad'
         });
-        c.query(`CALL get_avail_trains("${data.date}", ${data.from}, ${data.to}, "${data.time}", NULL, @${`holder`});`,null,{metadata:false},
+        c.query(`CALL get_avail_trains("${data.date}", ${data.from}, ${data.to}, '${data.time}', NULL, @'holder');`,null,{metadata:false},
         (err,rows)=>{
             if (err) io.sockets.to(socket.id).emit('fetch_train_err', err);
             else io.sockets.to(socket.id).emit('available_trains', rows[0]);
         })
+        c.end();
   })
   socket.on('make_reservation', function(data){
         var c = new Client({
@@ -112,13 +115,32 @@ io.on('connection', function(socket){
             seg0 = data.to;
             seg1 = data.from -1;
         }
-        c.query(`CALL make_reservation(${data.date}, ${data.train}, ${seg0}, ${seg1}, ${data.pid}, ${data.card}, ${data.address}, @${`output`});`,
-    null,
-    {metadata: true},
-    (err,rows)=>{
-        if (err) io.sockets.to(socket.id).emit('reservation_err', err);
-        else io.sockets.to(socket.id).emit('confirm_reserve', rows);
-    })
+        if (seg0 === -1 || seg1 === -1) io.sockets.to(socket.id).emit('reservation_err', err);
+        else {
+            c.query(`CALL make_reservation('${data.date}', ${data.train}, ${seg0}, ${seg1}, ${data.pid}, ${data.card}, '${data.address}', @'output');`,
+            null,
+            {metadata: true},
+            (err,rows)=>{
+                if (err) io.sockets.to(socket.id).emit('reservation_err', err);
+                else io.sockets.to(socket.id).emit('confirm_reserve', rows);
+            });
+        }
+        c.end();
+  })
+  socket.on('delete_reservation',function(data){
+        var c = new Client({
+            host: 'localhost',
+            user: 'root',
+            password: 'team7336',
+            multiStatements: true,
+            db: 'railroad'
+        });
+        c.query(`call delete_reservation(${data.num})`,null,
+        {metadata:true},(err,rows)=>{
+            if (err) io.sockets.to(socket.id).emit('cancel_err',err);
+            else io.sockets.to(socket.id).emit('cancel_success',rows);
+        })
+        c.end();
   })
 });
 
